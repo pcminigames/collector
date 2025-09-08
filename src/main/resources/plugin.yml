@@ -1,0 +1,16 @@
+name: "ric"
+version: "2.0"
+main: "com.pythoncraft.ric.PluginMain"
+api-version: "1.21"
+authors: [pythoncraft]
+description: "Random Item Challenge plugin for Minecraft"
+depend: [GameLib]
+depends: [GameLib]
+
+commands:
+  ric:
+    description: "Random Item Challenge command"
+    usage: "/ric <time>"
+  compass:
+    description: "Get a tracking compass"
+    usage: "/compass [<player>]"
