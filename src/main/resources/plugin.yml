@@ -1,16 +1,16 @@
-name: "ric"
-version: "2.0"
-main: "com.pythoncraft.ric.PluginMain"
+name: "collector"
+version: "1.0"
+main: "com.pythoncraft.collector.PluginMain"
 api-version: "1.21"
 authors: [pythoncraft]
-description: "Random Item Challenge plugin for Minecraft"
+description: "Collector plugin for Minecraft"
 depend: [GameLib]
 depends: [GameLib]
 
 commands:
-  ric:
-    description: "Random Item Challenge command"
-    usage: "/ric <time>"
+  collector:
+    description: "Collector command"
+    usage: "/collector [items|deaths] <time>"
   compass:
     description: "Get a tracking compass"
     usage: "/compass [<player>]"

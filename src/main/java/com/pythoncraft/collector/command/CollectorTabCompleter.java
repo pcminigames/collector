@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-public class RICTabCompleter implements TabCompleter {
+public class CollectorTabCompleter implements TabCompleter {
     
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
@@ -17,10 +17,16 @@ public class RICTabCompleter implements TabCompleter {
         if (!(sender instanceof Player)) {return completions;}
 
         if (args.length == 1) {
-            completions.add("30");
-            completions.add("60");
-            completions.add("90");
+            completions.add("items");
+            completions.add("deaths");
             completions.add("stop");
+        }
+
+        if (args.length == 2) {
+            completions.add("300");
+            completions.add("600");
+            completions.add("900");
+            completions.add("1200");
         }
 
         return completions;
