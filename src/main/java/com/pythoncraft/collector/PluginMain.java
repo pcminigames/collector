@@ -128,6 +128,8 @@ public class PluginMain extends JavaPlugin implements Listener {
 
         playersInGame.clear();
         items.clear();
+        deaths.clear();
+        scores.clear();
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 20 * prepareTime, 0, false, false));
