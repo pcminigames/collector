@@ -24,23 +24,24 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
 
 import com.pythoncraft.collector.command.CollectorCommand;
 import com.pythoncraft.collector.command.CollectorTabCompleter;
 import com.pythoncraft.gamelib.Chat;
 import com.pythoncraft.gamelib.GameLib;
 import com.pythoncraft.gamelib.Logger;
+import com.pythoncraft.gamelib.Score;
 import com.pythoncraft.gamelib.Timer;
 
 
@@ -66,6 +67,7 @@ public class PluginMain extends JavaPlugin implements Listener {
     public static HashSet<String> avoidedBiomes = new HashSet<>();
 
     public static BossBar bossBar;
+    public Score objective;
 
     public static World world;
     public static boolean gameRunning = false;
@@ -74,6 +76,7 @@ public class PluginMain extends JavaPlugin implements Listener {
 
     public static HashMap<Player, HashSet<Material>> items = new HashMap<>();
     public static HashMap<Player, HashSet<String>> deaths = new HashMap<>();
+    public static HashMap<Player, Integer> scores = new HashMap<>();
 
     public Timer timer;
 
@@ -133,7 +136,7 @@ public class PluginMain extends JavaPlugin implements Listener {
             
             Location spawn = new Location(world, x + 0.5, y + 1.09375, z + 0.5);
             p.teleport(spawn);
-            p.setRespawnLocation(spawn);
+            p.setRespawnLocation(spawn, true);
             p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 999999, 0, false, false));
 
             Inventory i = p.getInventory();
@@ -144,31 +147,40 @@ public class PluginMain extends JavaPlugin implements Listener {
         }
 
         this.timer = new Timer(prepareTime * 20, 20, (i) -> {
+            // PREPARATION STARTED
             for (Player p : playersInGame) {
                 p.sendActionBar(Chat.c("§a§l" + i));
                 if (i <= 3) {p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1);}
             }
         }, () -> {
+            // GAME STARTED
             preparing = false;
             gameRunning = true;
 
+            this.objective = new Score("collector", "§a§lCollector");
+            this.objective.resetScores();
+            this.objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
             PluginMain.instance.timer = new Timer(time * 20, 20, (i1) -> {
+                // GAME TICK
                 int q = i1 % time;
                 PluginMain.bossBar.setProgress(1 - (q / (double) time));
 
-                if (gameType == 0) {                        
-                    for (Player p : playersInGame) {
-                        for (ItemStack item : p.getInventory().getContents()) {
-                            if (item == null) {continue;}
-                            items.putIfAbsent(p, new HashSet<>());
-                            if (!items.get(p).contains(item.getType())) {
-                                items.get(p).add(item.getType());
-                                Logger.info("Player {0} collected item: {1}", p.getName(), item.getType());
-                            }
+                if (gameType != 0) {return;}
+
+                for (Player p : playersInGame) {
+                    for (ItemStack item : p.getInventory().getContents()) {
+                        if (item == null) {continue;}
+                        items.putIfAbsent(p, new HashSet<>());
+                        if (!items.get(p).contains(item.getType())) {
+                            items.get(p).add(item.getType());
+                            scores.put(p, items.get(p).size());
+                            this.objective.setScore(p.getName(), scores.get(p));
                         }
                     }
                 }
             }, () -> {
+                // GAME ENDED
                 for (Player p : playersInGame) {
                     p.sendMessage("");
                     p.sendMessage(Chat.c("§c§lTime is up!"));
@@ -178,19 +190,14 @@ public class PluginMain extends JavaPlugin implements Listener {
                     for (Attribute attribute : attributes.keySet()) {p.getAttribute(attribute).setBaseValue(attributes.get(attribute));}
 
                     p.sendMessage(Chat.c("Results:"));
-                    if (gameType == 0) {
-                        List<Player> sorted = items.keySet().stream().sorted((a, b) -> Integer.compare(items.get(b).size(), items.get(a).size())).toList();
-                        for (int j = 0; j < Math.min(5, sorted.size()); j++) {
-                            Player pl = sorted.get(j);
-                            int count = items.get(pl).size();
-                            p.sendMessage(Chat.c((j + 1) + ". §e§l" + pl.getName() + "§r: §a§l" + count + "§r unique items"));
-                        }
-                    } else if (gameType == 1) {
-                        List<Player> sorted = deaths.keySet().stream().sorted((a, b) -> Integer.compare(deaths.get(b).size(), deaths.get(a).size())).toList();
-                        for (int j = 0; j < Math.min(5, sorted.size()); j++) {
-                            Player pl = sorted.get(j);
-                            int count = deaths.get(pl).size();
+                    List<Player> sorted = scores.keySet().stream().sorted((a, b) -> Integer.compare(scores.get(b), scores.get(a))).toList();;
+                    for (int j = 0; j < Math.min(5, items.size()); j++) {
+                        Player pl = sorted.get(j);
+                        int count = scores.get(pl);
+                        if (gameType == 1) {
                             p.sendMessage(Chat.c((j + 1) + ". §e§l" + pl.getName() + "§r: §a§l" + count + "§r unique deaths"));
+                        } else {
+                            p.sendMessage(Chat.c((j + 1) + ". §e§l" + pl.getName() + "§r: §a§l" + count + "§r unique items"));
                         }
                     }
                 }
@@ -238,6 +245,10 @@ public class PluginMain extends JavaPlugin implements Listener {
         getInstance().getLogger().log(Level.INFO, "Stopping Collector.");
         gameRunning = false;
         preparing = false;
+
+        this.objective.setDisplaySlot(null);
+        this.objective.unregister();
+        this.objective = null;
 
         if (this.timer != null) {this.timer.cancel();}
         if (bossBar != null) {bossBar.removeAll();}
@@ -335,7 +346,8 @@ public class PluginMain extends JavaPlugin implements Listener {
             deaths.putIfAbsent(player, new HashSet<>());
             if (!deaths.get(player).contains(deathMessage)) {
                 deaths.get(player).add(deathMessage);
-                Logger.info("Player {0} died: {1}", player.getName(), deathMessage);
+                scores.put(player, deaths.get(player).size());
+                this.objective.setScore(player.getName(), scores.get(player));
             }
         }
     }
