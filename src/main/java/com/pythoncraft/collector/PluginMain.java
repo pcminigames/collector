@@ -34,13 +34,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
 
 import com.pythoncraft.collector.command.CollectorCommand;
 import com.pythoncraft.collector.command.CollectorTabCompleter;
 import com.pythoncraft.gamelib.Chat;
 import com.pythoncraft.gamelib.GameLib;
-import com.pythoncraft.gamelib.Logger;
 import com.pythoncraft.gamelib.Score;
 import com.pythoncraft.gamelib.Timer;
 
